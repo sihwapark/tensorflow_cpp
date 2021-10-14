@@ -1,0 +1,30 @@
+#!/bin/sh
+
+PROJECT_NAME="$1"
+SRC_NAME="$2"
+SRC_DIR=$(dirname ${SRC_NAME})
+
+PWD=${PWD}
+
+SCRIPT_PATH=$(dirname ${BASH_SOURCE[0]})
+FIRSTCHAR=${SCRIPT_PATH:0:1}
+if [ ${FIRSTCHAR} == "/" ]; then
+	LIB_PATH=${SCRIPT_PATH}
+else
+	LIB_PATH=${PWD}/${SCRIPT_PATH}
+fi
+
+
+CMAKE_PATH=${LIB_PATH}
+CMAKE_BUILD_PATH=${LIB_PATH}/${SRC_DIR}/build
+# echo ${LIB_PATH}
+# echo ${SCRIPT_PATH}
+# echo ${SRC_DIR}
+
+# rm -rf ${CMAKE_BUILD_PATH}
+cmake -DPROJECT_NAME=${PROJECT_NAME} -DSRC_NAME=${LIB_PATH}/${SRC_NAME} -H${CMAKE_PATH} -B${CMAKE_BUILD_PATH} && 
+echo &&
+cmake --build ${CMAKE_BUILD_PATH} &&
+echo &&
+${CMAKE_BUILD_PATH}/${PROJECT_NAME}
+echo

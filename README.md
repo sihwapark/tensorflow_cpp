@@ -1,6 +1,10 @@
 # TensorFlow C++ Libraries
 
-## r2.0 for macOS
+Personal notes on how to build TensorFlow C++ libraries on macOS
+
+
+
+## TensorFlow r2.0 on macOS
 
 TensorFlow-2.0.0 
 
@@ -16,7 +20,7 @@ Apple clang version 11.0.0 (clang-1100.0.33.12)
 
 ### Prerequisites
 
-Install Xcode command line tool
+Install XCode command line tool
 
 Install Homebrew
 
@@ -71,7 +75,7 @@ To see a list of TF versions: https://www.tensorflow.org/versions
 
 
 
-### Run Configure
+### Run configure
 
 ```bash
 ./configure
@@ -85,7 +89,7 @@ To see a list of TF versions: https://www.tensorflow.org/versions
 
 #### libtensorflow_cc.so
 
-For CPU only optimized (release) version with the use of CPU features
+For CPU only optimized (release) version with the use of CPU features:
 
 ```bash
 bazel build -c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-msse4.2 --config=opt //tensorflow:libtensorflow_cc.so
@@ -95,13 +99,13 @@ bazel build -c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-msse4.2 --con
 * remove ` --copt=-mavx --copt=-mavx2 --copt=-mfma  --copt=-msse4.2` if your CPU doesn't support the features.
 * `--config=v1` : build TensorFlow 1.x instead of 2.x.
 
-For CPU only debug version
+For CPU only debug version:
 
 ```bash
 bazel build //tensorflow:libtensorflow_cc.so
 ```
 
-For GPU optimized (release) version
+For GPU optimized (release) version:
 
 ```bash
 bazel build -c opt --config=opt --config=cuda //tensorflow:libtensorflow_cc.so
@@ -150,7 +154,6 @@ cd [path/to/your/dst/]
 
 You could add or remove paths for required dependencies in `copy_headers.sh`.
 
-
 ### Copy libraries
 
 To automatically copy the libraries, use the given `copy_libraries.sh` insider the root of your destination folder for the libraries:
@@ -160,9 +163,7 @@ To automatically copy the libraries, use the given `copy_libraries.sh` insider t
 ```
 
 
-Or, if you want to do the same manually,
-
-To copy libraries:
+Or, if you want to do the same manually, copy libraries:
 
 ```bash
 cp [path/to/tensorflow/src]/bazel-bin/tensorflow/{libtensorflow_cc.so, libtensorflow_framework.so, libtensorflow_framework.2.dylib} [path/to/your/dst/]
@@ -170,15 +171,13 @@ cp [path/to/tensorflow/src]/bazel-bin/tensorflow/{libtensorflow_cc.so, libtensor
 
 (`libtensorflow_framework.2.dylib` is for the version compiled with CPU features ??)
 
+#### macOS only
 
-
-(macOS only) To clean a machine specific id in the lib and to use RPATH with CMake:
+To clean a machine specific id in the lib and to use RPATH with CMake:
 
 ```bash
 ./fix_rpath.sh r2.0/lib
 ```
-
-
 
 Or, manually:
 
@@ -199,7 +198,6 @@ otool -L libtensorflow_cc.so
 If it is fixed, you should see something like as below:
 
 ```bash
-
 r2.0/lib/libtensorflow_cc.so:
 	@rpath/libtensorflow_cc.so (compatibility version 0.0.0, current version 0.0.0)
 	/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 800.7.0)
@@ -214,9 +212,11 @@ r2.0/lib/libtensorflow_cc.so:
 
 
 
-### Test C++ Code
+### Test C++ code
 
-main.cpp
+Create `main.cpp` and `CMakeLists.txt` in the same folder, for example `examples/TF2Test/`.
+
+- `main.cpp`
 
 ``` c++
 #include <iostream>
@@ -242,7 +242,8 @@ int main() {
 }
 ```
 
-CMakeLists.txt
+- `CMakeLists.txt`
+  - Caution: You must change `LIB_PATH` with your lib path `path/to/your/dst/r2.0`. Below example assumes the lib path as  `~/Documents/src/tensorflow-libs/r2.0`.
 
 ```cmake
 cmake_minimum_required(VERSION 3.9)
@@ -302,15 +303,54 @@ Run and see the result:
 39
 ```
 
+Or, you can do the same by create `run.sh` in `examples/TF2Test/`.
 
-
-Or you can do the same with given `run.sh` and `CMakeLists.txt`:
+- `run.sh`
 
 ```bash
+#!/bin/sh
+
+PROJECT_NAME="$1"
+SRC_NAME="$2"
+
+rm -rf build
+cmake -DPROJECT_NAME=${PROJECT_NAME} -DSRC_NAME=${SRC_NAME} -H. -Bbuild && 
+echo &&
+cmake --build build &&
+echo &&
+./build/${PROJECT_NAME}
+echo
+```
+
+Run:
+
+```
 ./run.sh main main.cpp
 ```
 
 
+
+#### Using `run.sh` in the root folder
+
+Without making `CMakeLists.txt` and `run.sh ` files individually for each project, you can use the same files in a root folder. Note that  `run.sh` given in the root folder differs from the above.
+
+Make sure your folder structure is as below:
+
+```
+[path/to/your/dst/]
+  +-- CMakeLists.txt
+  +-- run.sh
+  +-- r2.0/
+  +-- examples/
+      |-- TF2Test/
+          |-- main.cpp
+```
+
+And run:
+
+```bash
+./run.sh main examples/TF2Test/main.cpp
+```
 
 
 
